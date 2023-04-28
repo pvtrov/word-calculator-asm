@@ -15,6 +15,7 @@ data segment
     ; definuje errory dla zlego wprowadzenia
     error1  db 13, 10, "Zle dane wejsciowe :( :( :( $"
     error2  db 13, 10, "Oj, podales zla liczbe argumnetow :( sproboj ponownie $"
+    f_n     db "$"
 
     ; definuje bufor na ciag znakow przyjety od uzytkownika
     bufor   db 50, ?, 100 dup("$")
@@ -164,6 +165,11 @@ main:
 
     mov     byte ptr ds:[arg_2+2], cl
 
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; ponizej proboje znalezc dopasowanie do cyfr i operatorów
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     ; zczytuje jaka cyfra to pierwszy argument
     mov     di, offset zero
     call    match_first_argument
@@ -247,6 +253,11 @@ main:
         ; jak nic nie znalazlo to wyrzuc blad
         call    throw_exception_1 
 
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; ponizsze funkcje odpowiadaja za wykonanie dzialania
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     add_arguments:
         mov     al, byte ptr ds:[arg_1]
         add     al, byte ptr ds:[arg_2]
@@ -276,6 +287,9 @@ main:
         jmp     print_solution
 
 
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; ponizsze funkcje odpowiadaja za wyprintowanie wyniku
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     print_solution:
         ; prawie wypisuje wynik
@@ -286,78 +300,81 @@ main:
         call    print
 
     mov     bx, word ptr ds:[res_val]   ; wpisuje wynik do bx
-    
-    cmp     bx, 80                      
-    jg      print_negative
+
+    cmp     bx, 0
+    je      print_zero
 
     cmp     bx, 20                      ; jezeli wynik jest niemniejszy niz 20 to parsuj dziesiatki
     jge     print_tens
 
-    print_negative:
-        mov     dx, offset minus+1
+    jmp     compare_teens
+
+    print_zero:
+        mov     dx, offset zero+1
         call    print
+        jmp     end_program
 
-        neg     bx                      ; zamieniam liczbe na przeciwna
-        jmp     print_units             ; teraz printuje liczbe
+    print_tens:                         ;gdy znajde cyfre dziesiatek to w dx jest offset na slowny zapis, a w bx jest liczba po odjeciu dziesiatek
+            mov     dx, offset twenty+1
+            sub     bx, 20
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-    print_tens:                       ;gdy znajde cyfre dziesiatek to w dx jest offset na slowny zapis, a w bx jest liczba po odjeciu dziesiatek
-        mov     dx, offset twenty+1
-        sub     bx, 20
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset thirty+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-        mov     dx, offset thirty+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset fourty+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-        mov     dx, offset fourty+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset fifty+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-        mov     dx, offset fifty+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset sixty+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-        mov     dx, offset sixty+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset seventy+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            cmp     bx, 10
+            jl      print_dozens
 
-        mov     dx, offset seventy+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        cmp     bx, 10
-        jl      print_dozens
+            mov     dx, offset eighty+1
+            sub     bx, 10
+            cmp     bx, 0
+            je      print_tens_result
+            jmp     print_dozens
 
-        mov     dx, offset eighty+1
-        sub     bx, 10
-        cmp     bx, 0
-        je      print_tens_result
-        jmp     print_dozens
+        print_dozens:
+            call    print
+            jmp     print_units
 
-    print_tens_result:
-        call    print
+        print_tens_result:
+            call    print
 
-    print_dozens:
-        call    print
-        jmp     print_units
+    compare_teens:
+        cmp     bx, 10                      ; jezeli wynik jest niemniejszy niz 10 to pasuj nastki
+        jge     print_teens
 
-    cmp     bx, 10                      ; jezeli wynik jest niemniejszy niz 10 to pasuj nastki
-    jge     print_teens
+        jmp     compare_units
 
     print_teens:
         mov     dx, offset ten+1
@@ -397,15 +414,25 @@ main:
         je      print_teens_result
 
         mov     dx, offset nineteen+1
-        jmp      print_teens_result
+        jmp     print_teens_result
 
     print_teens_result:
         call    print
+        jmp     end_program
 
-    cmp     bx, 0                       ; jezeli wynik jest niemniejszy niz 0 to pasuj jednosci
-    jge     print_units 
-    
-    jmp     print_negative              ; w innym wypadku parsuj ujemne
+    compare_units:
+        cmp     bx, 0                       ; jezeli wynik jest niemniejszy niz 0 to pasuj jednosci
+        jge     print_units 
+
+        jmp     print_negative              ; w innym wypadku parsuj ujemne
+
+    print_negative:
+        mov     dx, offset minus+1
+        call    print
+
+        neg     bx                      ; zamieniam liczbe na przeciwna
+        jmp     print_units             ; teraz printuje liczbe
+
 
     print_units:
         mov     dx, offset nine+1
@@ -444,24 +471,19 @@ main:
         cmp     bx, 1
         je      print_result
 
-        mov     dx, offset zero+1
+        mov     dx, offset f_n
         jmp     print_result
 
 
     print_result:
         call print
 
-
     jmp     end_program
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-end_program:
-    mov     al,0
-    mov     ah,4ch 
-    int     21h
-
+; ponizsze funkcje zajmuja sie dopasowaniem cyfr oraz operatora
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 match_first_argument:
     mov     ax, seg data
     mov     ds, ax
@@ -694,7 +716,15 @@ match_operator_multiply:
     multiply_founded:
         jmp     multiply_arguments  
 
+
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; ponizsze funkcje odpowiadaja za pomocnicze dzialania programu
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+end_program:
+    mov     al,0
+    mov     ah,4ch 
+    int     21h
 
 throw_exception_1:
     mov     dx,offset error1
