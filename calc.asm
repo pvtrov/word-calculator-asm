@@ -3,6 +3,8 @@
 ; 2. pobralam dane od uzytkownika
 ; 3. pobralam dlugosci kazdego z "czlonow" inputu, tj argumentu 1, operatora i argumentu 2
 ; 4. rozpoznalam kazda z cyfr oraz operator
+; 5. po rozpozannaiu operatora wykonalam dzialanie
+; 6. wyprintowalam slowny wynik
 
 assume cs:code , ds:data
 
@@ -15,7 +17,6 @@ data segment
     ; definuje errory dla zlego wprowadzenia
     error1  db 13, 10, "Zle dane wejsciowe :( :( :( $"
     error2  db 13, 10, "Oj, podales zla liczbe argumnetow :( sproboj ponownie $"
-    f_n     db "$"
 
     ; definuje bufor na ciag znakow przyjety od uzytkownika
     bufor   db 50, ?, 100 dup("$")
@@ -68,9 +69,9 @@ data ends
 
 code segment
 main:
-    mov     ax, seg stack_      ;wczytuje adres stosu do rejestru AX
-    mov     ss, ax              ;przypisuje wartosc rejestru AX do rejestru SS
-    mov     sp, offset stack_   ;wczytuje offset stosu do rejestru SP
+    mov     ax, seg stack_                      ; wczytuje adres stosu do rejestru AX
+    mov     ss, ax                              ; przypisuje wartosc rejestru AX do rejestru SS
+    mov     sp, offset stack_                   ; wczytuje offset stosu do rejestru SP
 
     ; wyswietlam powitanie
     mov     dx, offset welcome
@@ -86,10 +87,10 @@ main:
     ; zaczynam poszukiwania poczatku i konca inputu
     mov     ax, seg data
     mov     ds, ax
-    mov     bp, offset bufor+1   ; dodaje +1 zeby dostac się "?" w buforze (ile znakow zostalo wpisane)
-    mov     cl, byte ptr ds:[bp] ; wczytuje do cl liczbe wpisanych znakow 
-    mov     ch, 1                ; zeruje licznik iteracji
-    mov     bx, 2                ; ustawiam wskaznik na pierwszy znak w buforze
+    mov     bp, offset bufor+1                  ; dodaje +1 zeby dostac się "?" w buforze (ile znakow zostalo wpisane)
+    mov     cl, byte ptr ds:[bp]                ; wczytuje do cl liczbe wpisanych znakow 
+    mov     ch, 1                               ; zeruje licznik iteracji
+    mov     bx, 2                               ; ustawiam wskaznik na pierwszy znak w buforze
 
     ; ustawiam poczatek argumentu 1 na 0
     mov     byte ptr ds:[arg_1+1], 0    
@@ -97,42 +98,42 @@ main:
     find_first_arg_end:
         mov     dh, byte ptr ds:[bufor+bx]
 
-        cmp     cl, ch              ; jesli to koniec stringa to podano za malo argumentow
+        cmp     cl, ch                          ; jesli to koniec stringa to podano za malo argumentow
         je      throw_exception_2
 
-        cmp     dh, 32              ; jesli to spacja to zapisz koniec argumnetu
+        cmp     dh, 32                          ; jesli to spacja to zapisz koniec argumnetu
         je      set_first_arg_end
 
-        inc     bx                  ; przesuwamy wskaznik dalej
-        inc     ch                  ; wzrastamy licznik
+        inc     bx                              ; przesuwamy wskaznik dalej
+        inc     ch                              ; wzrastamy licznik
     jmp     find_first_arg_end
 
     set_first_arg_end:
-        dec     ch                      ; przesuwam ch na pierwszy znak przed spacja
+        dec     ch                              ; przesuwam ch na pierwszy znak przed spacja
         mov     bp, offset arg_1+2 
-        mov     byte ptr ds:[bp], ch    ; wpisuje dlugosc pierwszego argumentu
+        mov     byte ptr ds:[bp], ch            ; wpisuje dlugosc pierwszego argumentu
         inc     ch
 
     ; ustawiam poczatek operatora na aktualny numer
-    inc     bx                              ; przesuwam wsakznik na kolejny znak
-    mov     byte ptr ds:[operator+1], ch    ; ustaw poczatek operatora na aktualny numer
+    inc     bx                                  ; przesuwam wsakznik na kolejny znak
+    mov     byte ptr ds:[operator+1], ch        ; ustaw poczatek operatora na aktualny numer
     inc     ch
 
     find_operator_end:
-        mov     dh, byte ptr ds:[bufor+bx] ; zczytuje znak z bufora
+        mov     dh, byte ptr ds:[bufor+bx]      ; zczytuje znak z bufora
         
-        cmp     cl, ch                     ; jesli koniec stringa to za malo argumentow
+        cmp     cl, ch                          ; jesli koniec stringa to za malo argumentow
         je      throw_exception_2          
 
-        cmp     dh, 32                     ; jesli to spacja to zapisz koniec operatora
+        cmp     dh, 32                          ; jesli to spacja to zapisz koniec operatora
         je      set_operator_end
 
-        inc     bx                         ; przesuwam wskaznik na kolejny znak
-        inc     ch                         ; wzrastam licznik
+        inc     bx                              ; przesuwam wskaznik na kolejny znak
+        inc     ch                              ; wzrastam licznik
     jmp find_operator_end
 
     set_operator_end:
-        cmp     cl, ch                  ; jesli koniec stringa to za malo argumentow
+        cmp     cl, ch                          ; jesli koniec stringa to za malo argumentow
         je      throw_exception_2
 
         dec     ch                              ; przesuwam wskaznik na znak przed spacja
@@ -140,19 +141,20 @@ main:
         inc     ch                              ; wzrastam ch
 
     ; usawiam poczatek drugiego argumentu na aktualny numer
-    inc     bx                          ; przesuwam wskaznik na kolejny znak 
-    mov     byte ptr ds:[arg_2+1], ch   ; ustawiam poacztek argumentu drugiego
-    inc     ch                          ; wzrastam ch
+    inc     bx                                  ; przesuwam wskaznik na kolejny znak 
+    mov     byte ptr ds:[arg_2+1], ch           ; ustawiam poacztek argumentu drugiego
+    inc     ch                                  ; wzrastam ch
 
     find_second_argument_end:
-        mov     dh, byte ptr ds:[bufor+bx] ; zczytuje znak z bufora
+        mov     dh, byte ptr ds:[bufor+bx]      ; zczytuje znak z bufora
 
-        cmp     cl, ch                     ; jesli koniec stringa to za malo argumentow
+        cmp     cl, ch                          ; jesli koniec stringa to za malo argumentow
         je      throw_exception_2
 
         jmp     continue
 
     throw_exception_2:
+        ; za mala ilosc argumentow
         mov     dx,offset error2
         call    print
         jmp     end_program
@@ -170,7 +172,9 @@ main:
 ; ponizej proboje znalezc dopasowanie do cyfr i operatorów
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    find_first_arg:
     ; zczytuje jaka cyfra to pierwszy argument
+
     mov     di, offset zero
     call    match_first_argument
 
@@ -201,11 +205,12 @@ main:
     mov     di, offset nine
     call    match_first_argument
 
-    ; jak nic nie znalazlo to wyrzuc blad
-    call    throw_exception_1          
+    
+    call    throw_exception_1                   ; jak nic nie znalazlo to wyrzuc blad
 
-    ; zczytuje jaka cyfra to drugi argument
     find_second_arg:
+   ; zczytuje jaka cyfra to drugi argument
+
     mov     di, offset zero
     call    match_second_argument
 
@@ -236,8 +241,8 @@ main:
     mov     di, offset nine
     call    match_second_argument
 
-    ; jak nic nie znalazlo to wyrzuc blad
-    call    throw_exception_1   
+
+    call    throw_exception_1                   ; jak nic nie znalazlo to wyrzuc blad
 
 
     find_operator:
@@ -250,8 +255,8 @@ main:
         mov     di, offset multiply
         call    match_operator_multiply
 
-        ; jak nic nie znalazlo to wyrzuc blad
-        call    throw_exception_1 
+
+        call    throw_exception_1               ; jak nic nie znalazlo to wyrzuc blad
 
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,30 +264,30 @@ main:
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     add_arguments:
-        mov     al, byte ptr ds:[arg_1]
-        add     al, byte ptr ds:[arg_2]
+        mov     al, byte ptr ds:[arg_1]         ; zapisuje do al wartosc pierwszego argumentu
+        add     al, byte ptr ds:[arg_2]         ; dodaje do al wartosc drugiego argumentu
         mov     ah, 0
-        mov     word ptr ds:[res_val], ax
+        mov     word ptr ds:[res_val], ax       ; ustawiam wartosc wyniku na optrzymana z dodawania wartosc
 
-        jmp     print_solution
+        jmp     print_solution                  ; przeskakuje do printowania wyniku
     
 
     substract_arguments:
-        mov     al, byte ptr ds:[arg_1]
-        mov     bl, byte ptr ds:[arg_2] 
-        mov     ah, 0
+        mov     al, byte ptr ds:[arg_1]         ; zapisuje do al wartosc pierwszego argumentu
+        mov     bl, byte ptr ds:[arg_2]         ; zapisuje do bl wartosc drugiego argumnetu
+        mov     ah, 0   
         mov     bh, 0
-        sub     ax, bx
-        mov     word ptr ds:[res_val], ax
+        sub     ax, bx                          ; odejmuje wartosci
+        mov     word ptr ds:[res_val], ax       ; przypisuje otzrymana wartosc do wyniku
 
         jmp     print_solution
 
 
     multiply_arguments:
-        mov     ax, 0
-        mov     al, byte ptr ds:[arg_1]
-        mul     byte ptr ds:[arg_2]
-        mov     word ptr ds:[res_val], ax
+        mov     ax, 0                            
+        mov     al, byte ptr ds:[arg_1]         ; przypisuje do al wartosc pierwszego argumnetu 
+        mul     byte ptr ds:[arg_2]             ; mnoze wartosci
+        mov     word ptr ds:[res_val], ax       ; przypisuje optrzymana wartosc do wyniku
 
         jmp     print_solution
 
@@ -292,37 +297,38 @@ main:
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     print_solution:
-        ; prawie wypisuje wynik
-        mov     dx, offset result
+        mov     dx, offset result               ; wypisuje "wynikiem jest: "
         call    print
 
-        mov     dx, offset empt_line
+        mov     dx, offset empt_line            ; wypisuje nową linie
         call    print
 
-    mov     bx, word ptr ds:[res_val]   ; wpisuje wynik do bx
+    mov     bx, word ptr ds:[res_val]           ; wpisuje wynik do bx
 
-    cmp     bx, 0
+    cmp     bx, 0                               ; jezeli wynik jest równy 0 to wypisuje 0 i koncze program
     je      print_zero
 
-    cmp     bx, 20                      ; jezeli wynik jest niemniejszy niz 20 to parsuj dziesiatki
+    cmp     bx, 20                              ; jezeli wynik jest wiekszy badz rowny 20 to przechodze do anazliy dziesiatek
     jge     print_tens
 
-    jmp     compare_teens
+    jmp     compare_teens                       ; w innym wypadku sprawdzam czy wynik zawiera sie w 10-19
 
     print_zero:
         mov     dx, offset zero+1
         call    print
         jmp     end_program
 
-    print_tens:                         ;gdy znajde cyfre dziesiatek to w dx jest offset na slowny zapis, a w bx jest liczba po odjeciu dziesiatek
-            mov     dx, offset twenty+1
-            sub     bx, 20
-            cmp     bx, 0
-            je      print_tens_result
-            cmp     bx, 10
-            jl      print_dozens
+    print_tens:                                 
+            ; odejmujac kolejno znajduje rzad dziesiatek, gdy go znajde do printuje slowo i przechodze do badania jednosci 
 
-            mov     dx, offset thirty+1
+            mov     dx, offset twenty+1         ; zakladam najpierw ze wynik jest rzedu 20
+            sub     bx, 20                      ; odejmuje 20
+            cmp     bx, 0                       ; jesli otrzymana roznica jest rowna 0 to znaczy ze wynik to 20
+            je      print_tens_result           ; printuje "dwadziescia "
+            cmp     bx, 10                      ; jesli otrzymana roznica jest mniejsza od 10 to znaczy ze wynik jest rzedu 21-29
+            jl      print_dozens                ; przechodze do printowania
+
+            mov     dx, offset thirty+1         ; analogicznie jak powyzej
             sub     bx, 10
             cmp     bx, 0
             je      print_tens_result
@@ -364,20 +370,23 @@ main:
             jmp     print_dozens
 
         print_dozens:
-            call    print
-            jmp     print_units
+            call    print                       ; printuje dziesiatki
+            jmp     print_units                 ; przechodze do printowania jednosci
 
         print_tens_result:
-            call    print
+            call    print                       ; printuje same dziesiatki tj. 10, 20, 30 etc.
+            jmp     end_program
 
     compare_teens:
-        cmp     bx, 10                      ; jezeli wynik jest niemniejszy niz 10 to pasuj nastki
-        jge     print_teens
+        cmp     bx, 10                          ; jezeli bx jest rowny badz wiekszy 10 to znaczy ze wynik jest 10-19
+        jge     print_teens                     ; printujemy nastki
 
-        jmp     compare_units
+        jmp     compare_units                   ; jesli nie to porownujemy jednosci (wynik jest jednocyfrowy)
 
     print_teens:
-        mov     dx, offset ten+1
+        ; sprawdzam po kolei i jesli cos jest rowne to printuje wynik
+
+        mov     dx, offset ten+1            
         cmp     bx, 10
         je      print_teens_result
 
@@ -417,24 +426,26 @@ main:
         jmp     print_teens_result
 
     print_teens_result:
-        call    print
-        jmp     end_program
+        call    print                           ; printuje wynik nastkowy
+        jmp     end_program                     ; koncze program
 
     compare_units:
-        cmp     bx, 0                       ; jezeli wynik jest niemniejszy niz 0 to pasuj jednosci
-        jge     print_units 
+        cmp     bx, 0                           ; jezeli bx jest rowne badz wieksze od 0 to znaczy ze wynik jest 0-9
+        jge     print_units                     ; printuje jednosci
 
-        jmp     print_negative              ; w innym wypadku parsuj ujemne
+        jmp     print_negative                  ; w innym wypadku wynik musi byc -8 do -1 wiec printujemy ujemne
 
-    print_negative:
-        mov     dx, offset minus+1
+    print_negative:                         
+        mov     dx, offset minus+1              ; printuje minus
         call    print
 
-        neg     bx                      ; zamieniam liczbe na przeciwna
-        jmp     print_units             ; teraz printuje liczbe
+        neg     bx                              ; zamieniam liczbe na przeciwna
+        jmp     print_units                     ; teraz printuje liczbe
 
 
     print_units:
+        ; sprawdzam po kolei i jesli cos jest rowne to printuje wynik
+
         mov     dx, offset nine+1
         cmp     bx, 9
         je      print_result
@@ -471,14 +482,12 @@ main:
         cmp     bx, 1
         je      print_result
 
-        mov     dx, offset f_n
-        jmp     print_result
 
-
-    print_result:
+    print_result:                               ; printuje wynik
         call print
 
-    jmp     end_program
+    jmp     end_program                         ; zakoncz program
+
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; ponizsze funkcje zajmuja sie dopasowaniem cyfr oraz operatora
@@ -488,38 +497,38 @@ match_first_argument:
     mov     ax, seg data
     mov     ds, ax
 
-    mov     al, byte ptr ds:[arg_1+2] ; wczytuje do al koniec 1 argumentu
-    mov     ah, byte ptr ds:[arg_1+1] ; wczytuje do ah poczatek 1 argumentu
-    sub     al, ah                    ; wyliczam dlugosc argumentu 
+    mov     al, byte ptr ds:[arg_1+2]           ; wczytuje do al koniec 1 argumentu
+    mov     ah, byte ptr ds:[arg_1+1]           ; wczytuje do ah poczatek 1 argumentu
+    sub     al, ah                              ; wyliczam dlugosc argumentu 
 
-    mov     ah, byte ptr ds:[di]      ; wczytuje do ah dlugosc podanej cyfry, dlugosc mam zadana w danych
+    mov     ah, byte ptr ds:[di]                ; wczytuje z danych do ah dlugosc badanej cyfry
 
-    cmp     ah, al                    ; jesli dlugosci sa inne to nie sprawdzam dalej
+    cmp     ah, al                              ; jesli dlugosci sa inne to nie sprawdzam dalej
     jne     return
 
-    mov     cl, al                    ; wpisuje dlugosc slowa do cl
+    mov     cl, al                              ; wpisuje dlugosc slowa do cl
 
-    mov     bx, 2                     ; ustawiam bx na poczatek cyfry
+    mov     bx, 2                               ; ustawiam bx na poczatek cyfry
     mov     bh, 0
     add     bl, byte ptr ds:[arg_1+1]
 
-    inc     di                        ; przesuwam wskaznik na pierwsza lioterke sperawdzanej cyfry
+    inc     di                                  ; przesuwam wskaznik na pierwsza lioterke sperawdzanej cyfry
 
-    mov     ch, 1                     ; ustawiam licznik petli
+    mov     ch, 1                               ; ustawiam licznik petli
 
     compare_loop:
-        mov     dh, byte ptr ds:[bufor+bx] ; wczytuje litere z pierwszego argumentu
-        mov     dl, byte ptr ds:[di]       ; wczytuje litere z badanej cyfry
+        mov     dh, byte ptr ds:[bufor+bx]      ; wczytuje litere z pierwszego argumentu
+        mov     dl, byte ptr ds:[di]            ; wczytuje litere z badanej cyfry
 
-        cmp     dh, dl                     ; jesli sie roznia to koncze porownywanie
+        cmp     dh, dl                          ; jesli sie roznia to koncze porownywanie
         jne     return
 
-        cmp     ch, cl                     ; jesli przeliterowalam cale slowo to znalazlam cyfre
+        cmp     ch, cl                          ; jesli przeliterowalam cale slowo to znalazlam cyfre
         je      founded
 
-        inc     ch                         ; zwiekszam licznik petli
-        inc     bx                         ; zwiekszam wskaznik na input
-        inc     di                         ; zwiekszam wskaznik na badana cyfre
+        inc     ch                              ; zwiekszam licznik petli
+        inc     bx                              ; zwiekszam wskaznik na input
+        inc     di                              ; zwiekszam wskaznik na badana cyfre
     jmp compare_loop
 
     return:
@@ -527,48 +536,48 @@ match_first_argument:
 
     founded:
         inc     di
-        inc     di                         ; ustawiam di na wartosc liczbowa
-        mov     al, byte ptr ds:[di]       ; wczytuje do al wartosc liczbowa
-        mov     byte ptr ds:[arg_1], al    ; wczytuje wartosc argumentu
-        jmp     find_second_arg
+        inc     di                              ; ustawiam di na wartosc liczbowa
+        mov     al, byte ptr ds:[di]            ; wczytuje do al wartosc liczbowa
+        mov     byte ptr ds:[arg_1], al         ; wczytuje wartosc argumentu
+        jmp     find_second_arg                 ; przechodze do szukania drugiego argumentu
 
 
 match_second_argument:
     mov     ax, seg data
     mov     ds, ax
 
-    mov     al, byte ptr ds:[arg_2+2] ; wczytuje koniec argumentu
-    mov     ah, byte ptr ds:[arg_2+1] ; wczytuje poczatek argumentu
-    sub     al, ah                   ; licze dlugosc argumentu 2
+    mov     al, byte ptr ds:[arg_2+2]           ; wczytuje koniec argumentu
+    mov     ah, byte ptr ds:[arg_2+1]           ; wczytuje poczatek argumentu
+    sub     al, ah                              ; licze dlugosc argumentu 2
 
     mov     ah, byte ptr ds:[di]
 
-    cmp     al, ah                   ; jesli dlugosc sie rozni to nie skoncz porownywanie
+    cmp     al, ah                              ; jesli dlugosc sie rozni to nie skoncz porownywanie
     jne     return_2
 
-    mov     cl, al                   ; zapisuje dlugosc slowa
+    mov     cl, al                              ; zapisuje dlugosc slowa
 
-    inc     di                       ; di przesuwam na pierwszy znak parametru
+    inc     di                                  ; di przesuwam na pierwszy znak parametru
 
-    mov     bx, 2                    ; bx jako znacznik na pierwszy znak arg2 w buforze
+    mov     bx, 2                               ; bx jako znacznik na pierwszy znak arg2 w buforze
     mov     bh, 0
     add     bl, byte ptr ds:[arg_2+1]
 
-    mov     ch, 1                    ; ustawiam licznik petli
+    mov     ch, 1                               ; ustawiam licznik petli
 
     compare_loop_2:
-        mov     dh, byte ptr ds:[bufor+bx] ; wczytuje litere z drugiego argumentu
-        mov     dl, byte ptr ds:[di]       ; wczytuje litere z badanej cyfry
+        mov     dh, byte ptr ds:[bufor+bx]      ; wczytuje litere z drugiego argumentu
+        mov     dl, byte ptr ds:[di]            ; wczytuje litere z badanej cyfry
 
-        cmp     dh, dl                     ; jesli sie roznia to koncze porownywanie
+        cmp     dh, dl                          ; jesli sie roznia to koncze porownywanie
         jne     return_2
 
-        cmp     ch, cl                     ; jesli przeliterowalam cale slowo to znalazlam cyfre
+        cmp     ch, cl                          ; jesli przeliterowalam cale slowo to znalazlam cyfre
         je      founded_2
 
-        inc     ch                         ; zwiekszam licznik petli
-        inc     bx                         ; zwiekszam wskaznik na input
-        inc     di                         ; zwiekszam wskaznik na badana cyfre
+        inc     ch                              ; zwiekszam licznik petli
+        inc     bx                              ; zwiekszam wskaznik na input
+        inc     di                              ; zwiekszam wskaznik na badana cyfre
     jmp compare_loop_2
 
     return_2:
@@ -576,162 +585,171 @@ match_second_argument:
 
     founded_2:
         inc     di
-        inc     di                         ; ustawiam di na wartosc liczbowa
-        mov     al, byte ptr ds:[di]       ; wczytuje do al wartosc liczbowa
-        mov     byte ptr ds:[arg_2], al    ; wczytuje wartosc argumentu
-        jmp     find_operator
+        inc     di                              ; ustawiam di na wartosc liczbowa
+        mov     al, byte ptr ds:[di]            ; wczytuje do al wartosc liczbowa
+        mov     byte ptr ds:[arg_2], al         ; wczytuje wartosc argumentu
+        jmp     find_operator                   ; przechodze do zanalezienia operatora
 
 
 match_operator_plus:
+    ; sprawdzam czy operator to plus
+
     mov     ax, seg data
     mov     ds, ax
 
-    mov     al, byte ptr ds:[operator + 2] ; wpisuje koniec operatora
-    mov     ah, byte ptr ds:[operator + 1] ; wpisuje poczatek operatora
-    sub     al, ah                         ; zdobywam dlugosc
+    mov     al, byte ptr ds:[operator + 2]      ; wpisuje koniec operatora
+    mov     ah, byte ptr ds:[operator + 1]      ; wpisuje poczatek operatora
+    sub     al, ah                              ; zdobywam dlugosc
 
-    mov     ah, byte ptr ds:[di]           ; wpisuje do ah dlugosc badanego slowa
+    mov     ah, byte ptr ds:[di]                ; wpisuje do ah dlugosc badanego slowa
 
-    cmp     al, ah                         ; jesli dlugosc sie rozni to nie skoncz porownywanie
+    cmp     al, ah                              ; jesli dlugosc sie rozni to nie skoncz porownywanie
     jne     return_pl
 
-    mov     cl, al                         ; zapisuje dlugosc slowa
+    mov     cl, al                              ; zapisuje dlugosc slowa
 
-    inc     di                             ; di przesuwam na pierwszy znak parametru
+    inc     di                                  ; di przesuwam na pierwszy znak parametru
 
-    mov     bx, 2                          ; bx jako znacznik na pierwszy znak arg2 w buforze
+    mov     bx, 2                               ; bx jako znacznik na pierwszy znak arg2 w buforze
     mov     bh, 0
     add     bl, byte ptr ds:[operator+1]
 
-    mov     ch, 1                          ; ustawiam licznik petli
+    mov     ch, 1                               ; ustawiam licznik petli
 
     compare_loop_plus:
-        mov     dh, byte ptr ds:[bufor+bx] ; wczytuje litere z operatora
-        mov     dl, byte ptr ds:[di]       ; wczytuje litere z badanego operatora
+        mov     dh, byte ptr ds:[bufor+bx]      ; wczytuje litere z operatora
+        mov     dl, byte ptr ds:[di]            ; wczytuje litere z badanego operatora
 
-        cmp     dh, dl                     ; jesli sie roznia to koncze porownywanie
+        cmp     dh, dl                          ; jesli sie roznia to koncze porownywanie
         jne     return_pl
 
-        cmp     ch, cl                     ; jesli przeliterowalam cale slowo to znalazlam operator
+        cmp     ch, cl                          ; jesli przeliterowalam cale slowo to znalazlam operator
         je      plus_founded
 
-        inc     ch                         ; zwiekszam licznik petli
-        inc     bx                         ; zwiekszam wskaznik na input
-        inc     di                         ; zwiekszam wskaznik na badany operator
+        inc     ch                              ; zwiekszam licznik petli
+        inc     bx                              ; zwiekszam wskaznik na input
+        inc     di                              ; zwiekszam wskaznik na badany operator
     jmp compare_loop_plus
 
     return_pl:
         ret
 
     plus_founded:
-        jmp     add_arguments
+        jmp     add_arguments                   ; skoro operator to plus to przechodze do dodawania argumentow
 
 
 match_operator_minus:
+    ; sprawdzam czy operator to minus
+
     mov     ax, seg data
     mov     ds, ax
 
-    mov     al, byte ptr ds:[operator + 2] ; wpisuje koniec operatora
-    mov     ah, byte ptr ds:[operator + 1] ; wpisuje poczatek operatora
-    sub     al, ah                         ; zdobywam dlugosc
+    mov     al, byte ptr ds:[operator + 2]      ; wpisuje koniec operatora
+    mov     ah, byte ptr ds:[operator + 1]      ; wpisuje poczatek operatora
+    sub     al, ah                              ; zdobywam dlugosc
 
-    mov     ah, byte ptr ds:[di]           ; wpisuje do ah dlugosc badanego slowa
+    mov     ah, byte ptr ds:[di]                ; wpisuje do ah dlugosc badanego slowa
 
-    cmp     al, ah                         ; jesli dlugosc sie rozni to nie skoncz porownywanie
+    cmp     al, ah                              ; jesli dlugosc sie rozni to nie skoncz porownywanie
     jne     return_mi
 
-    mov     cl, al                         ; zapisuje dlugosc slowa
+    mov     cl, al                              ; zapisuje dlugosc slowa
 
-    inc     di                             ; di przesuwam na pierwszy znak parametru
+    inc     di                                  ; di przesuwam na pierwszy znak parametru
 
-    mov     bx, 2                          ; bx jako znacznik na pierwszy znak arg2 w buforze
+    mov     bx, 2                               ; bx jako znacznik na pierwszy znak arg2 w buforze
     mov     bh, 0
     add     bl, byte ptr ds:[operator+1]
 
-    mov     ch, 1                          ; ustawiam licznik petli
+    mov     ch, 1                               ; ustawiam licznik petli
 
     compare_loop_minus:
-        mov     dh, byte ptr ds:[bufor+bx] ; wczytuje litere z operatora
-        mov     dl, byte ptr ds:[di]       ; wczytuje litere z badanego operatora
+        mov     dh, byte ptr ds:[bufor+bx]      ; wczytuje litere z operatora
+        mov     dl, byte ptr ds:[di]            ; wczytuje litere z badanego operatora
 
-        cmp     dh, dl                     ; jesli sie roznia to koncze porownywanie
+        cmp     dh, dl                          ; jesli sie roznia to koncze porownywanie
         jne     return_mi
 
-        cmp     ch, cl                     ; jesli przeliterowalam cale slowo to znalazlam operator
-        je      minus_founded
+        cmp     ch, cl                          ; jesli przeliterowalam cale slowo to znalazlam operator
+        je      minus_founded   
 
-        inc     ch                         ; zwiekszam licznik petli
-        inc     bx                         ; zwiekszam wskaznik na input
-        inc     di                         ; zwiekszam wskaznik na badany operator
+        inc     ch                              ; zwiekszam licznik petli
+        inc     bx                              ; zwiekszam wskaznik na input
+        inc     di                              ; zwiekszam wskaznik na badany operator
     jmp compare_loop_minus
 
     return_mi:
         ret
 
     minus_founded:
-        jmp     substract_arguments       
+        jmp     substract_arguments             ; skoro operator to minus to przechodze do odejmowania argumentow
 
 
 match_operator_multiply:
+    ; sprawdzam czy operator to mnozenie
+
     mov     ax, seg data
     mov     ds, ax
 
-    mov     al, byte ptr ds:[operator + 2] ; wpisuje koniec operatora
-    mov     ah, byte ptr ds:[operator + 1] ; wpisuje poczatek operatora
-    sub     al, ah                         ; zdobywam dlugosc
+    mov     al, byte ptr ds:[operator + 2]      ; wpisuje koniec operatora
+    mov     ah, byte ptr ds:[operator + 1]      ; wpisuje poczatek operatora
+    sub     al, ah                              ; zdobywam dlugosc
 
-    mov     ah, byte ptr ds:[di]           ; wpisuje do ah dlugosc badanego slowa
+    mov     ah, byte ptr ds:[di]                ; wpisuje do ah dlugosc badanego slowa
 
-    cmp     al, ah                         ; jesli dlugosc sie rozni to nie skoncz porownywanie
+    cmp     al, ah                              ; jesli dlugosc sie rozni to nie skoncz porownywanie
     jne     return_mul
 
-    mov     cl, al                         ; zapisuje dlugosc slowa
+    mov     cl, al                              ; zapisuje dlugosc slowa
 
-    inc     di                             ; di przesuwam na pierwszy znak parametru
+    inc     di                                  ; di przesuwam na pierwszy znak parametru
 
-    mov     bx, 2                          ; bx jako znacznik na pierwszy znak arg2 w buforze
+    mov     bx, 2                               ; bx jako znacznik na pierwszy znak arg2 w buforze
     mov     bh, 0
     add     bl, byte ptr ds:[operator+1]
 
-    mov     ch, 1                          ; ustawiam licznik petli
+    mov     ch, 1                               ; ustawiam licznik petli
 
     compare_loop_mul:
-        mov     dh, byte ptr ds:[bufor+bx] ; wczytuje litere z operatora
-        mov     dl, byte ptr ds:[di]       ; wczytuje litere z badanego operatora
+        mov     dh, byte ptr ds:[bufor+bx]      ; wczytuje litere z operatora
+        mov     dl, byte ptr ds:[di]            ; wczytuje litere z badanego operatora
 
-        cmp     dh, dl                     ; jesli sie roznia to koncze porownywanie
+        cmp     dh, dl                          ; jesli sie roznia to koncze porownywanie
         jne     return_mul
 
-        cmp     ch, cl                     ; jesli przeliterowalam cale slowo to znalazlam operator
+        cmp     ch, cl                          ; jesli przeliterowalam cale slowo to znalazlam operator
         je      multiply_founded
 
-        inc     ch                         ; zwiekszam licznik petli
-        inc     bx                         ; zwiekszam wskaznik na input
-        inc     di                         ; zwiekszam wskaznik na badany operator
+        inc     ch                              ; zwiekszam licznik petli
+        inc     bx                              ; zwiekszam wskaznik na input
+        inc     di                              ; zwiekszam wskaznik na badany operator
     jmp compare_loop_mul
 
     return_mul:
         ret
 
     multiply_founded:
-        jmp     multiply_arguments  
+        jmp     multiply_arguments              ; skoro operator to mnozenie to przechodze do mnozenia argumentow
 
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; ponizsze funkcje odpowiadaja za pomocnicze dzialania programu
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-end_program:
+end_program:        
+    ; zakonczenie programu                           
     mov     al,0
     mov     ah,4ch 
     int     21h
 
 throw_exception_1:
+    ; zle dane wejsciowe
     mov     dx,offset error1
     call    print
     jmp     end_program
 
 print:
+    ; printowanie tego czego chcemy
     mov ax,seg data
     mov ds,ax
     mov ah,9
