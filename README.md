@@ -6,21 +6,21 @@
 
 #### Examples:
 Input: dwa plus trzy (two plus three) \
-Output: Wynikiem jest: szesc (The result is six) \
+Output: wynikiem jest: szesc (the result is six) \
 \
 Input: piec minus osiem (five minus eight)\
-Output: Wynikiem jest: minus trzy (The result is minus three)\
+Output: wynikiem jest: minus trzy (the result is minus three)\
 \
 Input: dziewiec razy dziewiec (nine times nine)\
-Output: Wynikiem jest: osiemdziesiat jeden (eighty one)\
+Output: wynikiem jest: osiemdziesiat jeden (the result is eighty one)
 
 
 #### Moreover, my program handles exceptions and errors such as *insufficient number of arguments* or *bad input* data:
 Input: dwa plus pienc (two plus fiwe)\
-Output: złe dane wejściowe :( (Bad input data)\
+Output: złe dane wejściowe :( (bad input data)\
 \
 Input: dwa (two)\
-Output: za mala liczba argumentow (Not enough arguments)\
+Output: za mala liczba argumentow (not enough arguments)
 
 ### How to run?
 *for Linux OS*
