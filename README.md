@@ -1,10 +1,12 @@
 # :star2: Word Calculator in Assembly :star2:
 ### :sparkles: :sparkles: Program written with patience, love and pride :sparkles: :sparkles:
 
-### I am pleased to present my program written in assembler language which is a word calculator.
-### This calculator takes as arguments the operation to be performed and returns a word result of the operation. Unfortunately, so far only in Polish :neutral_face:
+#### I am pleased to present my program written in assembler language which is a word calculator.
+#### This calculator takes as arguments the operation to be performed and returns a word result of the operation. Unfortunately, so far only in Polish :neutral_face:
 
-#### Input:
+
+
+### What input does the program accept?:
 The program accepts numbers from 1 to 9 (written in words), and performs plus, minus and times operations. The number required is 3 words, separated by a space and ended with an enter.
 
 #### Examples:
