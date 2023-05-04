@@ -7,7 +7,7 @@
 
 
 ### What input does the program accept?:
-The program accepts numbers from 1 to 9 (written in words), and performs plus, minus and times operations. The number required is 3 words, separated by a space and ended with an enter.
+The program accepts numbers from 0 to 9 (written in words), and performs plus, minus and times operations. The number required is 3 words, separated by a space and ended with an enter.
 
 #### Examples:
 Input: *two plus three* \
