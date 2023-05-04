@@ -2,7 +2,7 @@
 ### :sparkles: :sparkles: Program written with patience, love and pride :sparkles: :sparkles:
 
 #### I am pleased to present my program written in assembler language which is a word calculator.
-#### This calculator takes as arguments the operation to be performed and returns a word result of the operation. Unfortunately, so far only in Polish :neutral_face:
+#### This calculator takes as arguments the operation to be performed and returns a word result of the operation. 
 
 
 
@@ -10,22 +10,22 @@
 The program accepts numbers from 1 to 9 (written in words), and performs plus, minus and times operations. The number required is 3 words, separated by a space and ended with an enter.
 
 #### Examples:
-Input: dwa plus trzy (two plus three) \
-Output: wynikiem jest: szesc (the result is six) \
+Input: *two plus three* \
+Output: the result is six \
 \
-Input: piec minus osiem (five minus eight)\
-Output: wynikiem jest: minus trzy (the result is minus three)\
+Input: *five minus eight*\
+Output: the result is minus three\
 \
-Input: dziewiec razy dziewiec (nine times nine)\
-Output: wynikiem jest: osiemdziesiat jeden (the result is eighty one)
+Input: *nine times nine*\
+Output: the result is eighty one
 
 
 #### Moreover, my program handles exceptions and errors such as *insufficient number of arguments* or *bad input* data:
-Input: dwa plus pienc (two plus fiwe)\
-Output: złe dane wejściowe :( (bad input data)\
+Input: *two plus fiwe*\
+Output: wrong input data\
 \
-Input: dwa (two)\
-Output: za mala liczba argumentow (not enough arguments)
+Input: *two*\
+Output: wrong number of arguments
 
 ### How to run?
 *for Linux OS*
